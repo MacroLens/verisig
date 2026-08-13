@@ -8684,18 +8684,26 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				}
 				else
 				{
+
+				        TaylorModelVec tmvTemp;
 					tmvImage.normalize(doAggregation);
-
 					int rangeDim = tmvImage.tms.size();
-					Matrix coefficients(rangeDim, rangeDim+1);
+					// Matrix coefficients(rangeDim, rangeDim+1);
+					// for(int i=0; i<rangeDim; ++i)
+					// {
+					// 	coefficients.set(1, i, i+1);
+					// }
+					// TaylorModelVec tmvTemp(coefficients);
 
-					for(int i=0; i<rangeDim; ++i)
-					{
-						coefficients.set(1, i, i+1);
+					for(int i = 0; i < rangeDim; i++){
+					        std::vector<int> degs(rangeDim+1, 0);
+						degs[i+1] = 1;
+						Monomial mCur(Interval(1), degs);
+						Polynomial pCur(mCur);
+						TaylorModel tmCur(pCur);
+
+						tmvTemp.tms.push_back(tmCur);
 					}
-
-					TaylorModelVec tmvTemp(coefficients);
-
 					fpAggregation.tmv = tmvTemp;
 					fpAggregation.tmvPre = tmvImage;
 					fpAggregation.domain = doAggregation;
