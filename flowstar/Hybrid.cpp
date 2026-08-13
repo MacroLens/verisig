@@ -8664,13 +8664,58 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 						tmvAggregation = tempFP.tmvPre;
 					  }
 				}				
-
-				//End of code added by Rado
 				
 				//reset map
 				TaylorModelVec tmvImage;
 				transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
-				test();
+				// Symbolic Remainders
+				if(!strncmp(modeName.c_str(), "_symbolic_", strlen("_symbolic_"))){
+					std::vector<Interval> all_ranges;
+					tmvImage.polyRange(all_ranges, doAggregation);
+					NNTaylorModelVec tmvImage_symbolic_rem;
+					NNTaylorModelVec nntmvImage;
+					for(int kk = 0; kk < tmvImage.tms.size(); kk++){
+						NNTaylorModel nnTemp(tmvImage.tms[kk], realVarNames);
+						nntmvImage.tms.push_back(nnTemp);
+					}
+
+					std::vector<bool> states_to_add(tmvImage.tms.size());
+					std::vector<bool> states_to_remove(tmvImage.tms.size());
+					std::vector<bool> sev_states_to_remove(tmvImage.tms.size());
+					int largeRemainder = false;
+
+					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+					        if(realVarNames[varInd+1][0] == 'x'){
+					                states_to_add[varInd] = true;
+							states_to_remove[varInd] = true;
+							if(tmvImage.tms[varInd].remainder.width() > 0.000001 &&
+							   tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
+						  
+							  largeRemainder = true;
+
+							}
+						}
+					}
+					if(largeRemainder){
+						  //first, consolidate current symbolic and non-symbolic remainders
+					      NNTaylorModelVec no_sym_tm;
+						  remove_symbolic_remainders(no_sym_tm, nntmvImage, realVarNames, states_to_remove, doAggregation);
+						  
+						  //then, add remainders symbolically again
+						  add_symbolic_remainders(tmvImage_symbolic_rem, no_sym_tm, realVarNames, states_to_add, doAggregation);
+						  tmvImage.tms.clear();
+						  
+						  for(int kk = 0; kk < tmvImage_symbolic_rem.tms.size(); kk++){
+						    
+						    TaylorModel tmTemp(tmvImage_symbolic_rem.tms[kk]);
+						    tmvImage.tms.push_back(tmTemp);
+						  }
+						  
+					}
+
+				}
+
+				//End of code added by Rado
 
 				std::vector<bool> bVecDummy;
 				int type = contract_interval_arithmetic(tmvImage, doAggregation, invariants[transitions[initMode][i].targetID], bVecDummy, cutoff_threshold);

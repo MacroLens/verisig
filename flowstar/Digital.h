@@ -22,4 +22,3 @@ void remove_symbolic_remainders(NNTaylorModelVec &result, const NNTaylorModelVec
 void add_symbolic_remainders(NNTaylorModelVec &result, const NNTaylorModelVec &tmvAggregation, const std::vector<std::string> varNames, std::vector<bool> states_to_change, const std::vector<Interval> domain);
 
 void symbolic_remainders(NNTaylorModelVec &result, const NNTaylorModelVec &tmvAggregation, const std::vector<std::string> varNames, std::vector<bool> states_to_change, const std::vector<Interval> domain, const std::vector<Interval> step_exp_table);
-void test();

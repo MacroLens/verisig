@@ -367,7 +367,3 @@ void symbolic_remainders(NNTaylorModelVec &result, const NNTaylorModelVec &tmvAg
 	        result = tmvAggregation;
 	}
 }
-void test() {
-	printf("testing");
-	return;
-}
