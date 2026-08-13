@@ -32,6 +32,8 @@ public:
 	~ResetMap();
 
 	void reset(TaylorModelVec & result, const TaylorModelVec & tmv, const std::vector<Interval> & domain, const int order, const Interval & cutoff_threshold) const;
+        void reset_nn(TaylorModelVec & result, const TaylorModelVec & tmv, std::vector<Interval> domain, std::vector<Interval> step_exp_table, const std::vector<std::string> & stateVarNames, const int order, const Interval & cutoff_threshold) const;
+        void reset_qr(NNTaylorModelVec & result, const NNTaylorModelVec & tmv, std::vector<Interval> tmvPolyRange, std::vector<Interval> domain, std::vector<Interval> step_exp_table, const std::vector<std::string> & stateVarNames, const int order, const Interval & cutoff_threshold) const;
 	void reset(Flowpipe & result, const Flowpipe & flowpipe, const Continuous_Reachability_Setting & crs) const;
 
 	ResetMap & operator = (const ResetMap & reset);

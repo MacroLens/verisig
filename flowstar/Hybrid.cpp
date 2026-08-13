@@ -82,6 +82,101 @@ void ResetMap::reset(TaylorModelVec & result, const TaylorModelVec & tmv, const 
 	tmvReset.insert_ctrunc(result, tmv, tmvPolyRange, domain, order, cutoff_threshold);
 }
 
+
+//code added by Rado
+void ResetMap::reset_qr(NNTaylorModelVec & result, const NNTaylorModelVec & tmv, std::vector<Interval> tmvPolyRange, std::vector<Interval> domain, std::vector<Interval> step_exp_table, const std::vector<std::string> & stateVarNames, const int order, const Interval & cutoff_threshold) const
+{
+
+        //this global variable is used in NNPolynomial so it needs to be set here
+        //also need to save the names in case the global DNN variable was populated by the DNN code
+        std::vector<std::string> tempVarNames;
+        if(dnn::dnn_initialized){
+ 	        tempVarNames = dnn::curAugmentedVarNames;
+	}
+	dnn::curAugmentedVarNames = stateVarNames;
+    
+	// NNTaylorModelVec nnTMV;
+	// for(int i = 0; i < tmv.tms.size(); i++){
+
+	//         NNTaylorModel nnTemp(tmv.tms[i], stateVarNames);
+	// 	nnTMV.tms.push_back(nnTemp);
+	// }
+
+	NNTaylorModelVec nnReset;
+	for(int i = 0; i < tmvReset.tms.size(); i++){
+
+	        NNTaylorModel nnTemp(tmvReset.tms[i], stateVarNames);
+		nnReset.tms.push_back(nnTemp);
+	}
+
+	//std::vector<Interval> tmvPolyRange;
+	//nnTMV.polyRange(tmvPolyRange, domain);
+
+	//NNTaylorModelVec nnResult;
+
+	bool cutoff = true;
+	bool ctrunc = true;
+
+	nnReset.insert(result, tmv, tmvPolyRange, step_exp_table, ctrunc, cutoff, cutoff_threshold, order);
+
+	// for(int i = 0; i < nnResult.tms.size(); i++){
+	//         TaylorModel tmTemp(nnResult.tms[i]);
+	// 	result.tms.push_back(tmTemp);
+	// }
+
+	//finally, restore the DNN names if needed
+	if(dnn::dnn_initialized){
+ 	        dnn::curAugmentedVarNames = tempVarNames;
+	}
+}
+
+void ResetMap::reset_nn(TaylorModelVec & result, const TaylorModelVec & tmv, std::vector<Interval> domain, std::vector<Interval> step_exp_table, const std::vector<std::string> & stateVarNames, const int order, const Interval & cutoff_threshold) const
+{
+
+        //this global variable is used in NNPolynomial so it needs to be set here
+        //also need to save the names in case the global DNN variable was populated by the DNN code
+        std::vector<std::string> tempVarNames;
+        if(dnn::dnn_initialized){
+ 	        tempVarNames = dnn::curAugmentedVarNames;
+	}
+	dnn::curAugmentedVarNames = stateVarNames;
+    
+	NNTaylorModelVec nnTMV;
+	for(int i = 0; i < tmv.tms.size(); i++){
+
+	        NNTaylorModel nnTemp(tmv.tms[i], stateVarNames);
+		nnTMV.tms.push_back(nnTemp);
+	}
+
+	NNTaylorModelVec nnReset;
+	for(int i = 0; i < tmvReset.tms.size(); i++){
+
+	        NNTaylorModel nnTemp(tmvReset.tms[i], stateVarNames);
+		nnReset.tms.push_back(nnTemp);
+	}
+
+	std::vector<Interval> tmvPolyRange;
+	nnTMV.polyRange(tmvPolyRange, domain);
+
+	NNTaylorModelVec nnResult;
+
+	bool cutoff = true;
+	bool ctrunc = true;
+
+	nnReset.insert(nnResult, nnTMV, tmvPolyRange, step_exp_table, ctrunc, cutoff, cutoff_threshold, order);
+
+	for(int i = 0; i < nnResult.tms.size(); i++){
+	        TaylorModel tmTemp(nnResult.tms[i]);
+		result.tms.push_back(tmTemp);
+	}
+
+	//finally, restore the DNN names if needed
+	if(dnn::dnn_initialized){
+ 	        dnn::curAugmentedVarNames = tempVarNames;
+	}
+}
+//end of code added by Rado
+
 void ResetMap::reset(Flowpipe & result, const Flowpipe & flowpipe, const Continuous_Reachability_Setting & crs) const
 {
   
@@ -8185,7 +8280,6 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				}
 			}
 
-
 			std::vector<bool> boundary_intersected = invariant_boundary_intersected;
 			for(int j=0; j<guard_boundary_intersected.size(); ++j)
 			{
@@ -8574,7 +8668,7 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				
 				//reset map
 				TaylorModelVec tmvImage;
-				transitions[initMode][i].resetMap.reset(tmvImage, tmvAggregation, doAggregation, globalMaxOrder, cutoff_threshold);
+				transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
 
 				std::vector<bool> bVecDummy;
 				int type = contract_interval_arithmetic(tmvImage, doAggregation, invariants[transitions[initMode][i].targetID], bVecDummy, cutoff_threshold);
