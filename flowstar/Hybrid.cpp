@@ -8878,17 +8878,16 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				//print state ranges after reset
 				if(bPrint){
 				        std::vector<Interval> all_ranges;
-					fpAggregation.intEval(all_ranges, cutoff_threshold);
-					TaylorModelVec tmv_printing;
-					fpAggregation.composition(tmv_printing, cutoff_threshold);				  
-				        for(int varInd = 0; varInd < transitions[initMode][i].resetMap.tmvReset.tms.size(); varInd ++){
+					tmvImage.intEval(all_ranges, doAggregation);
 				  
-					        printf("%s bounds after reset: [%13.10f, %13.10f]\n",
+				        for(int varInd = 0; varInd < all_ranges.size(); varInd ++){
+				  
+					        printf("%s bounds after reset: [%20.15f, %20.15f]\n",
 						       stateVarNames[varInd].c_str(), all_ranges[varInd].inf(), all_ranges[varInd].sup());
 						
-						printf("%s remainder after reset: [%13.10f, %13.10f]\n",
-						       stateVarNames[varInd].c_str(), tmv_printing.tms[varInd].remainder.inf(),
-						       tmv_printing.tms[varInd].remainder.sup());
+						printf("%s remainder after reset: [%20.15f, %20.15f]\n",
+						       stateVarNames[varInd].c_str(), tmvImage.tms[varInd].remainder.inf(),
+						       tmvImage.tms[varInd].remainder.sup());
 					}
 				}
 				
