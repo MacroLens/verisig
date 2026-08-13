@@ -134,6 +134,11 @@ void NNMonomial::setDegree(const int index, const int degree)
 	        degrees_map.erase(index);
 }
 
+std::map<int, int> NNMonomial::getDegrees()
+{
+        return degrees_map;
+}
+
 void NNMonomial::addDegree(const int index, const int degree)
 {
         d += degree;

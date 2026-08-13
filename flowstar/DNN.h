@@ -13,4 +13,9 @@ namespace dnn_reachability {
 
 }
 
+void qr_preconditioning(NNTaylorModelVec &tmv_left, NNTaylorModelVec &tmv_right, NNTaylorModelVec &tmv_composed,
+			const NNTaylorModelVec &tmvImage, const int num_init_conditions,
+			const std::vector<std::string> curAugmentedVarNames, const std::vector<Interval> domain,
+			const Continuous_Reachability_Setting & crs);
+
 #endif /* NEURAL_NETWORK__REACH_H_ */

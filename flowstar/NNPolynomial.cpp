@@ -673,6 +673,11 @@ void NNHornerForm::insertNN(NNTaylorModel & result, const NNTaylorModelVec & var
 		// tmTemp.expansion.mul_assign(0,1);			// multiplied by t
 		// tmTemp.remainder *= domain[0];
 		// result.add_assign(tmTemp);
+
+		if(hornerForms[0]->hornerForms.size() > 0){
+		        printf("Verisig assumption violated -- reset polynomial is a function of time. Exiting...\n");
+			exit(-1);
+		}
 		
 		for(int i=1; i<hornerForms.size(); ++i)
 		{
@@ -713,6 +718,11 @@ void NNHornerForm::insertNN(NNPolynomial &poly, Interval &remainder,
 	if(hornerForms.size() > 0) // the first variable is t
 	{
 
+	        if(hornerForms[0]->hornerForms.size() > 0){
+		        printf("Verisig assumption violated -- reset polynomial is a function of time. Exiting...\n");
+			exit(-1);
+		}
+
 		for(int i=1; i<hornerForms.size(); ++i)
 		{
 
@@ -723,36 +733,35 @@ void NNHornerForm::insertNN(NNPolynomial &poly, Interval &remainder,
 		        hornerForms[i]->insertNN(new_poly, new_remainder, vars, varsPolyRange,
 						 step_exp_table, ctrunc, cutoff, cutoff_threshold, order);	
 
-			auto start = chrono::high_resolution_clock::now();
+			//auto start = chrono::high_resolution_clock::now();
 			new_poly.get_remainder_from_mul(result_rem, new_remainder, vars.tms[i-1].remainder,
 			 				varsPolyRange[i-1], temp_res, temp, step_exp_table);
 
-			auto stop = chrono::high_resolution_clock::now();
-			auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
-			NNTaylorModel::remTime += duration.count();
+			//auto stop = chrono::high_resolution_clock::now();
+			//auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
+			//NNTaylorModel::remTime += duration.count();
 
-		        start = chrono::high_resolution_clock::now();
+		        //start = chrono::high_resolution_clock::now();
 			new_poly.mul_assign(vars.tms[i-1].expansion, mono_temp);
-			stop = chrono::high_resolution_clock::now();
-			duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
-			NNTaylorModel::mulTime += duration.count();
+			//stop = chrono::high_resolution_clock::now();
+			//duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
+			//NNTaylorModel::mulTime += duration.count();
 			
-			start = chrono::high_resolution_clock::now(); 
+			//start = chrono::high_resolution_clock::now(); 
 			poly.add_assign(new_poly);
-			stop = chrono::high_resolution_clock::now();
-			duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
-			NNTaylorModel::addAssignTime += duration.count();
+			//stop = chrono::high_resolution_clock::now();
+			//duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
+			//NNTaylorModel::addAssignTime += duration.count();
 
 			remainder += result_rem;
 			
 		}
-
 		if(cutoff){
-			auto start = chrono::high_resolution_clock::now(); 
+		        //auto start = chrono::high_resolution_clock::now(); 
 			poly.cutoff(temp, step_exp_table, cutoff_threshold);
-			auto stop = chrono::high_resolution_clock::now();
-			auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
-			NNTaylorModel::cutoffTime += duration.count();
+			//auto stop = chrono::high_resolution_clock::now();
+			//auto duration = chrono::duration_cast<chrono::nanoseconds>(stop - start);
+			//NNTaylorModel::cutoffTime += duration.count();
 			remainder += temp;
 		}
 		if(ctrunc){

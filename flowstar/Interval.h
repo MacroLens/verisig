@@ -32,9 +32,11 @@ public:
 
 	double getValue_RNDD() const;
 	double getValue_RNDU() const;
+	double getValue_RNDA() const;
 	void abs(Real & real) const;
 	double abs() const;
 	void abs_assign();
+	void ceil_assign();
 
 	void to_sym_int(Interval & I) const;		// to a symmetric interval
 

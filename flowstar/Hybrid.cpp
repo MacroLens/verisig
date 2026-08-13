@@ -8,6 +8,7 @@
 
 #include "Hybrid.h"
 #include "AddedResets.h"
+#include "Digital.h"
 #include "DNNResets.h"
 #include "DNN.h"
 #include <map>
@@ -8669,6 +8670,7 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				//reset map
 				TaylorModelVec tmvImage;
 				transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
+				test();
 
 				std::vector<bool> bVecDummy;
 				int type = contract_interval_arithmetic(tmvImage, doAggregation, invariants[transitions[initMode][i].targetID], bVecDummy, cutoff_threshold);

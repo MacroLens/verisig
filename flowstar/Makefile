@@ -3,7 +3,7 @@ include makefile.local
 LIBS = -lmpfr -lgmp -lgsl -lgslcblas -lm -lglpk -lyaml-cpp
 CFLAGS = -I . -I $(GMP_HOME) -I ./ctpl -g -O3 -std=c++11
 LINK_FLAGS = -g -L $(GMP_LIB_HOME) -pthread
-OBJS = Interval.o Matrix.o Polynomial.o Monomial.o Constraints.o Geometry.o TaylorModel.o Continuous.o expression.o DNNResets.o DNN.o AddedResets.o Hybrid.o NNTaylorModel.o NNPolynomial.o NNMonomial.o
+OBJS = Interval.o Matrix.o Polynomial.o Monomial.o Constraints.o Geometry.o TaylorModel.o Continuous.o expression.o DNNResets.o DNN.o AddedResets.o Digital.o Hybrid.o NNTaylorModel.o NNPolynomial.o NNMonomial.o
 
 all: flowstar lib
 

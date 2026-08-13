@@ -63,6 +63,11 @@ double Real::getValue_RNDU() const
 	return mpfr_get_d(value, MPFR_RNDU);
 }
 
+double Real::getValue_RNDA() const
+{
+	return mpfr_get_d(value, MPFR_RNDA);
+}
+
 void Real::abs(Real & real) const
 {
 	mpfr_abs(real.value, value, MPFR_RNDU);
@@ -81,6 +86,11 @@ double Real::abs() const
 void Real::abs_assign()
 {
 	mpfr_abs(value, value, MPFR_RNDU);
+}
+
+void Real::ceil_assign()
+{
+	mpfr_ceil(value, value);
 }
 
 void Real::to_sym_int(Interval & I) const

@@ -40,6 +40,7 @@ public:
 	void addDegree(const int index, const int degree);
 	int getDegree(const int index);
 	int getNumVars();
+        std::map<int, int> getDegrees();
 
 	bool isLinear(int & index) const;
 
