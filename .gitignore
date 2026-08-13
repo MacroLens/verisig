@@ -1,0 +1,9 @@
+
+flowstar/modelParser.output
+flowstar/modelParser.tab.c
+flowstar/modelParser.tab.h
+flowstar/lex.yy.c
+.vscode/*
+verisig-src/.gradle/*
+verisig-src/build/*
+
