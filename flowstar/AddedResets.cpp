@@ -1154,7 +1154,7 @@ Real getSinRemUpperBound(Interval intC, int order){
 		}
 
 		else if(order % 4 == 3){ //derivative is -cos(x)
-		        next_peak_index = floor(intC.inf() + M_PI / (2 * M_PI));
+		        next_peak_index = floor((intC.inf() + M_PI) / (2 * M_PI));
 			dist_to_peak = M_PI + next_peak_index * 2 * M_PI - intC.inf();
 		}		
 
@@ -1191,7 +1191,7 @@ Real getSinRemLowerBound(Interval intC, int order){
 		}		
 
 		else if(order % 4 == 1){ //derivative is cos(x)
-		        next_valley_index = floor(intC.inf() + M_PI / (2 * M_PI));
+		        next_valley_index = floor((intC.inf() + M_PI) / (2 * M_PI));
 			dist_to_valley = M_PI + next_valley_index * 2 * M_PI - intC.inf();
 		}
 
@@ -1243,7 +1243,7 @@ Real getCosRemUpperBound(Interval intC, int order){
 		}
 
 		if(order % 4 == 2){ //derivative is cos(x)
-		        next_peak_index = floor(intC.inf() + M_PI / (2 * M_PI));
+		        next_peak_index = floor((intC.inf() + M_PI) / (2 * M_PI));
 			dist_to_peak = M_PI + next_peak_index * 2 * M_PI - intC.inf();
 		}		
 
@@ -1280,7 +1280,7 @@ Real getCosRemLowerBound(Interval intC, int order){
 		double dist_to_valley = 0;
 
 		if(order % 4 == 0){ //derivative is cos(x)
-		        next_valley_index = floor(intC.inf() + M_PI / (2 * M_PI));
+		        next_valley_index = floor((intC.inf() + M_PI) / (2 * M_PI));
 			dist_to_valley = M_PI + next_valley_index * 2 * M_PI - intC.inf();
 		}
 
