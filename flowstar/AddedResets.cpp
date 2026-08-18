@@ -667,24 +667,24 @@ Real getDivRemUpperBound(const Interval intC, const int order){
 	else if(order == 4){
 	        //4th derivative is negative and decreasing for negative numbers
 	        if (intC.sup() < 0){
-		        bound = div3rdDer(Real(intC.inf()));
+		        bound = div4thDer(Real(intC.inf()));
 		}
 		//4th derivative is positive and decreasing for positive numbers
 		else if (intC.inf() > 0){
-		        bound = div3rdDer(Real(intC.inf()));
+		        bound = div4thDer(Real(intC.inf()));
 		}
 	}
 
 	else if(order == 5){
 	        //5th derivative is negative and decreasing for negative numbers
 	        if (intC.sup() < 0){
-		        bound = div3rdDer(Real(intC.inf()));
+		        bound = div5thDer(Real(intC.inf()));
 		}
 		//5th derivative is negative and increasing for positive numbers
 		else if (intC.inf() > 0){
-		        double maxVal = fabs(div5thDer(Real(intC.inf())).getValue_RNDD());
+		        //double maxVal = fabs(div5thDer(Real(intC.inf())).getValue_RNDD());
 
-		        bound = div3rdDer(Real(intC.sup()));
+		        bound = div5thDer(Real(intC.sup()));
 		}
 	}
 
