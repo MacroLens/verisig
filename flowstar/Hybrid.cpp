@@ -8681,17 +8681,16 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 
 					std::vector<bool> states_to_add(tmvImage.tms.size());
 					std::vector<bool> states_to_remove(tmvImage.tms.size());
-					std::vector<bool> sev_states_to_remove(tmvImage.tms.size());
 					int largeRemainder = false;
 
 					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
-					        if(realVarNames[varInd+1][0] == 'x'){
-					                states_to_add[varInd] = true;
+						if(realVarNames[varInd+1][0] == 'x'){
+							states_to_add[varInd] = true;
 							states_to_remove[varInd] = true;
 							if(tmvImage.tms[varInd].remainder.width() > 0.000001 &&
-							   tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
-						  
-							  largeRemainder = true;
+							tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
+						
+							largeRemainder = true;
 
 							}
 						}
