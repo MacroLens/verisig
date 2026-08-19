@@ -8652,7 +8652,6 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 
 					if(largeRemainder){
 					        Flowpipe tempFP(X0, intZero);
-						
 						for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
 						        if(!states_to_change[varInd]){
 							        tempFP.tmv.tms[varInd] = tmvAggregation.tms[varInd];
@@ -8677,7 +8676,7 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					std::vector<bool> states_to_remove(tmvImage.tms.size());
 					std::vector<bool> available_remainder_states(tmvImage.tms.size());
 					int largeRemainder = false;
-					printf("Entered into symbolic_mode.");
+					// printf("Entered into symbolic_mode.");
 					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
 						if(realVarNames[varInd+1][0] == 'x' &&
 							tmvImage.tms[varInd].remainder.width() > 0.000001 &&
@@ -8693,17 +8692,18 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					}
 					if(largeRemainder){
 						NNTaylorModelVec nntmvImage;
+						NNTaylorModelVec symTmv;
 						for(int kk = 0; kk < tmvImage.tms.size(); kk++){
 							NNTaylorModel nnTemp(tmvImage.tms[kk], realVarNames);
 							nntmvImage.tms.push_back(nnTemp);
 						}
 
+
 						  //then, add remainders symbolically again
 						//   add_symbolic_remainders(tmvImage_symbolic_rem, nntmvImage, realVarNames, states_to_add, doAggregation);
 						int num_vars = realVarNames.size();
-						NNTaylorModelVec tmvImage_symbolic_rem;
 						for(int kk = 0; kk < nntmvImage.tms.size(); kk++){
-							NNTaylorModel tmTemp(nntmvImage.tms[kk]);
+							NNTaylorModel &tmOrig = nntmvImage.tms[kk];
 							int available_sym_var_ind = -1;
 
 							// Get the index of the next available symbolic variable
@@ -8716,30 +8716,45 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 
 							// Move symbolic remainder to available variable
 							if(states_to_add[kk] && available_sym_var_ind != -1){
-									std::vector<int> new_degrees(num_vars);
+								NNTaylorModel &tmRem = nntmvImage.tms[available_sym_var_ind];
+								printf("Symbolic remainder MOVED to sym_%d\n", available_sym_var_ind);
+								std::vector<int> new_degrees(num_vars);
 								new_degrees[available_sym_var_ind+1] = 1;
-								Interval temp = nntmvImage.tms[kk].remainder;
 								Interval M;
-								temp.remove_midpoint(M);
-
+								std::string result_str;
+								M.toString(result_str);
+								printf("Original remainder has width, sup, and inf: %f, %f, %f\n", tmOrig.remainder.width(), tmOrig.remainder.sup(), tmOrig.remainder.inf());
+								tmOrig.remainder.remove_midpoint(M);
+								printf("Original remainder now has width, sup, and inf: %f, %f, %f\n", tmOrig.remainder.width(), tmOrig.remainder.sup(), tmOrig.remainder.inf());
+								printf("Interval removed: %s\n", result_str.c_str());
 								Interval new_coef;
-								temp.mag(new_coef);
-
+								tmOrig.remainder.mag(new_coef);
 								std::shared_ptr<NNMonomial> ptr_mono_const(new NNMonomial(M, num_vars));
 								std::shared_ptr<NNMonomial> ptr_mono(new NNMonomial(new_coef, new_degrees));
 
-								tmTemp.expansion.add_assign(ptr_mono_const);
-								tmTemp.expansion.add_assign(ptr_mono);			
-								
-								tmTemp.remainder = Interval(0.0, 0.0);
-							}
 
-							tmvImage_symbolic_rem.tms.push_back(tmTemp);
+								tmRem.expansion.add_assign(ptr_mono_const);
+								tmRem.expansion.add_assign(ptr_mono);
+								printf("Remainder has width: %f\n", tmRem.remainder.width());
+								printf("Added remainder to original.\n");								
+								tmOrig.remainder = Interval(0.0, 0.0);
+								tmRem.expansion.toString(result_str, tmVarNames);
+								printf("Remainder string: %s\n", result_str.c_str());
+								tmOrig.expansion.toString(result_str, tmVarNames);
+								printf("Original string: %s\n", result_str.c_str());
+
+								tmOrig.add_assign(tmRem);
+
+								tmOrig.expansion.toString(result_str, tmVarNames);
+								printf("After assign Original string: %s\n", result_str.c_str());
+								// symTmv.tms.push_back(tmRem);
+								available_remainder_states[available_sym_var_ind] = false;
+							}
 						}
 						tmvImage.tms.clear();
 						
-						for(int kk = 0; kk < tmvImage_symbolic_rem.tms.size(); kk++){
-							TaylorModel tmTemp(tmvImage_symbolic_rem.tms[kk]);
+						for(int kk = 0; kk < nntmvImage.tms.size(); kk++){
+							TaylorModel tmTemp(nntmvImage.tms[kk]);
 							tmvImage.tms.push_back(tmTemp);
 						}
 					}
