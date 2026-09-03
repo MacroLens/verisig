@@ -8622,51 +8622,10 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				//   this case deals with continuous modes where the plant 
 				//   states are temporarily replaced with interval approximations
 				//  */
-				if(!strncmp(curModeName.c_str(), "_reset_", strlen("_reset_"))){
-
-					//X0 stores the interval approximations for the f states only
-					std::vector<Interval> X0(tmvAggregation.tms.size());
-					
-					std::vector<Interval> all_ranges;
-					tmvAggregation.intEval(all_ranges, doAggregation);
-
-					// this is a roundabout way of doing things but I'd rather let
-					//Flow* APIs to handle low-level normalizations, etc.
-					std::vector<bool> states_to_change(tmvAggregation.tms.size());
-
-					bool largeRemainder = false;
-
-					//NB: this only works for state names that begin with y or x
-					for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
-					        if(stateVarNames[varInd][0] == 'y' || stateVarNames[varInd][0] == 'x'){
-						          states_to_change[varInd] = true;
-							  X0[varInd] = all_ranges[varInd];
-
-							  if(tmvAggregation.tms[varInd].remainder.width() > 0.000001 &&
-							     tmvAggregation.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
-						  
-								  largeRemainder = true;
-							  }
-						}
-					}
-
-					if(largeRemainder){
-					        Flowpipe tempFP(X0, intZero);
-						for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
-						        if(!states_to_change[varInd]){
-							        tempFP.tmv.tms[varInd] = tmvAggregation.tms[varInd];
-								tempFP.tmvPre.tms[varInd] = tmvAggregation.tms[varInd];
-								tempFP.domain[varInd + 1] = doAggregation[varInd + 1];//unused
-							}
-						}
-						
-						tmvAggregation = tempFP.tmvPre;
-					  }
-				}				
-				
-				//reset map
-				TaylorModelVec tmvImage;
-				transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
+                //reset map
+                TaylorModelVec tmvImage;
+				bool force_reset = false;
+                transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
 				// Symbolic Remainders
 				if(!strncmp(modeName.c_str(), "_symbolic_", strlen("_symbolic_"))){
 					std::vector<Interval> all_ranges;
@@ -8712,6 +8671,10 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 									available_sym_var_ind = jj;
 									break;
 								}
+							}
+							if (available_sym_var_ind == -1) {
+								force_reset = true;
+								break;
 							}
 
 							// Move symbolic remainder to available variable
@@ -8760,6 +8723,60 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					}
 
 				}
+				if(!strncmp(curModeName.c_str(), "_reset_", strlen("_reset_")) || force_reset){
+
+					//X0 stores the interval approximations for the f states only
+					std::vector<Interval> X0(tmvImage.tms.size());
+					
+					std::vector<Interval> all_ranges;
+					tmvImage.intEval(all_ranges, doAggregation);
+
+					// this is a roundabout way of doing things but I'd rather let
+					//Flow* APIs to handle low-level normalizations, etc.
+					std::vector<bool> states_to_change(tmvImage.tms.size());
+
+					bool largeRemainder = false;
+
+					//NB: this only works for state names that begin with y or x
+					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+					        if(stateVarNames[varInd][0] == 'y' || stateVarNames[varInd][0] == 'x' ||
+								!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
+						          states_to_change[varInd] = true;
+							  X0[varInd] = all_ranges[varInd];
+
+							  if(tmvImage.tms[varInd].remainder.width() > 0.000001 &&
+							     tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width() &&
+								strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
+						  
+								  largeRemainder = true;
+							  }
+						}
+					}
+
+					if(largeRemainder){
+					        Flowpipe tempFP(X0, intZero);
+						for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+						    if(!states_to_change[varInd]){
+							        tempFP.tmv.tms[varInd] = tmvImage.tms[varInd];
+								tempFP.tmvPre.tms[varInd] = tmvImage.tms[varInd];
+								// tempFP.domain[varInd + 1] = tmvImage[varInd + 1];//unused
+							}
+							if (!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))) {
+								printf("--==-- Did a reset due to symbolic remainders.\n");
+							    tempFP.tmv.tms[varInd] = TaylorModel(); // TODO: CHeck if this works after reset. This may be broken
+								// TODO: Could do sev or the gradient variables. Have to implement the digital hack, if we run out of variables
+								// we don't want to shrink-wrap in the same way, may want to unwrap symbolic variables to free up space.
+								// Temporarily adding a higher remainder will be ok since we are putting it back into a symbolic variable.
+								// Ignoring computation; if we run out of variables, pick one unwrap it and put the remainder  in this new variable
+								// (this may increase the remainder).
+								tempFP.tmvPre.tms[varInd] = tempFP.tmv.tms[varInd];
+							}
+						}
+						
+						tmvImage = tempFP.tmvPre;
+					  }
+				}				
+				
 
 				//End of code added by Rado
 
