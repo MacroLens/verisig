@@ -1,12 +1,6 @@
 #!/usr/bin/python
 
-from keras.models import Sequential
-from keras import models
-from keras import optimizers
-from keras.layers.core import Dense, Dropout, Activation
-from keras.layers.normalization import BatchNormalization
-from keras.layers.advanced_activations import LeakyReLU
-from keras.regularizers import l2
+from tensorflow.keras import models
 import numpy as np
 import sys
 import yaml
@@ -36,11 +30,12 @@ def main(argv):
             for row in layer.get_weights()[1].T:
                 dnn_dict['offsets'][layer_count].append(float(row))
 
-            if 'Sigmoid' in str(layer.output):
+            activation_name = layer.activation.__name__
+            if activation_name == 'sigmoid':
                 dnn_dict['activations'][layer_count] = 'Sigmoid'
-            elif 'Tanh' in str(layer.output):
+            elif activation_name == 'tanh':
                 dnn_dict['activations'][layer_count] = 'Tanh'
-            elif 'Relu' in str(layer.output):
+            elif activation_name == 'relu':
                 dnn_dict['activations'][layer_count] = 'Relu'
             else:
                 dnn_dict['activations'][layer_count] = 'Linear'
