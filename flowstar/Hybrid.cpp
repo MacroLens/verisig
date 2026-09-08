@@ -8622,32 +8622,29 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				//   this case deals with continuous modes where the plant 
 				//   states are temporarily replaced with interval approximations
 				//  */
-                //reset map
-                TaylorModelVec tmvImage;
-				bool force_reset = false;
-                transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
 				// Symbolic Remainders
+				bool force_reset = false;
 				if(!strncmp(modeName.c_str(), "_symbolic_", strlen("_symbolic_"))){
 					std::vector<Interval> all_ranges;
-					tmvImage.polyRange(all_ranges, doAggregation);
+					tmvAggregation.polyRange(all_ranges, doAggregation);
 
-					std::vector<bool> states_to_add(tmvImage.tms.size());
-					std::vector<bool> states_to_remove(tmvImage.tms.size());
-					std::vector<bool> available_remainder_states(tmvImage.tms.size());
+					std::vector<bool> states_to_add(tmvAggregation.tms.size());
+					std::vector<bool> states_to_remove(tmvAggregation.tms.size());
+					std::vector<bool> available_remainder_states(tmvAggregation.tms.size());
 					int largeRemainder = false;
 					size_t num_states_to_add = 0;
 					size_t num_sym_vars = 0;
 					// printf("Entered into symbolic_mode.");
-					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+					for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
 						if(realVarNames[varInd+1][0] == 'x' &&
-							tmvImage.tms[varInd].remainder.width() > 0.000001 &&
-							tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
+							tmvAggregation.tms[varInd].remainder.width() > 0.000001 &&
+							tmvAggregation.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width()){
 								// If the state variable is not within condition
 								states_to_add[varInd] = true;
 								largeRemainder = true;
 								num_states_to_add++;
 						} else if (!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_")) &&
-							tmvImage.tms[varInd].isZero()) {
+							tmvAggregation.tms[varInd].isZero()) {
 							// If the variable is a symbolic remainder variable and it hasn't been used yet.
 							available_remainder_states[varInd] = true;
 							num_sym_vars++;
@@ -8656,19 +8653,19 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					if (num_sym_vars < num_states_to_add) {
 						force_reset = true;
 					} else if(largeRemainder){
-						NNTaylorModelVec nntmvImage;
+						NNTaylorModelVec nntmvAggregation;
 						NNTaylorModelVec symTmv;
-						for(int kk = 0; kk < tmvImage.tms.size(); kk++){
-							NNTaylorModel nnTemp(tmvImage.tms[kk], realVarNames);
-							nntmvImage.tms.push_back(nnTemp);
+						for(int kk = 0; kk < tmvAggregation.tms.size(); kk++){
+							NNTaylorModel nnTemp(tmvAggregation.tms[kk], realVarNames);
+							nntmvAggregation.tms.push_back(nnTemp);
 						}
 
 
 						  //then, add remainders symbolically again
-						//   add_symbolic_remainders(tmvImage_symbolic_rem, nntmvImage, realVarNames, states_to_add, doAggregation);
+						//   add_symbolic_remainders(tmvAggregation_symbolic_rem, nntmvAggregation, realVarNames, states_to_add, doAggregation);
 						int num_vars = realVarNames.size();
-						for(int kk = 0; kk < nntmvImage.tms.size(); kk++){
-							NNTaylorModel &tmOrig = nntmvImage.tms[kk];
+						for(int kk = 0; kk < nntmvAggregation.tms.size(); kk++){
+							NNTaylorModel &tmOrig = nntmvAggregation.tms[kk];
 							int available_sym_var_ind = -1;
 
 							// Get the index of the next available symbolic variable
@@ -8685,7 +8682,7 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 
 							// Move symbolic remainder to available variable
 							if(states_to_add[kk] && available_sym_var_ind != -1){
-								NNTaylorModel &tmRem = nntmvImage.tms[available_sym_var_ind];
+								NNTaylorModel &tmRem = nntmvAggregation.tms[available_sym_var_ind];
 								printf("Symbolic remainder MOVED to sym_%d\n", available_sym_var_ind);
 								std::vector<int> new_degrees(num_vars);
 								new_degrees[available_sym_var_ind+1] = 1;
@@ -8720,11 +8717,11 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 								available_remainder_states[available_sym_var_ind] = false;
 							}
 						}
-						tmvImage.tms.clear();
+						tmvAggregation.tms.clear();
 						
-						for(int kk = 0; kk < nntmvImage.tms.size(); kk++){
-							TaylorModel tmTemp(nntmvImage.tms[kk]);
-							tmvImage.tms.push_back(tmTemp);
+						for(int kk = 0; kk < nntmvAggregation.tms.size(); kk++){
+							TaylorModel tmTemp(nntmvAggregation.tms[kk]);
+							tmvAggregation.tms.push_back(tmTemp);
 						}
 					}
 
@@ -8732,26 +8729,26 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 				if(!strncmp(curModeName.c_str(), "_reset_", strlen("_reset_")) || force_reset){
 
 					//X0 stores the interval approximations for the f states only
-					std::vector<Interval> X0(tmvImage.tms.size());
+					std::vector<Interval> X0(tmvAggregation.tms.size());
 					
 					std::vector<Interval> all_ranges;
-					tmvImage.intEval(all_ranges, doAggregation);
+					tmvAggregation.intEval(all_ranges, doAggregation);
 
 					// this is a roundabout way of doing things but I'd rather let
 					//Flow* APIs to handle low-level normalizations, etc.
-					std::vector<bool> states_to_change(tmvImage.tms.size());
+					std::vector<bool> states_to_change(tmvAggregation.tms.size());
 
 					bool largeRemainder = false;
 
 					//NB: this only works for state names that begin with y or x
-					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+					for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
 					        if(stateVarNames[varInd][0] == 'y' || stateVarNames[varInd][0] == 'x' ||
 								!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
 						          states_to_change[varInd] = true;
 							  X0[varInd] = all_ranges[varInd];
 
-							  if(tmvImage.tms[varInd].remainder.width() > 0.000001 &&
-							     tmvImage.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width() &&
+							  if(tmvAggregation.tms[varInd].remainder.width() > 0.000001 &&
+							     tmvAggregation.tms[varInd].remainder.width() > 0.01 * all_ranges[varInd].width() &&
 								strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
 						  
 								  largeRemainder = true;
@@ -8761,22 +8758,22 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 
 					if(largeRemainder){
 						// Remove symbolic remainder prior to shrink-wrapping.
-						std::vector<bool> sym_states_to_change(tmvImage.tms.size());
-						for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+						std::vector<bool> sym_states_to_change(tmvAggregation.tms.size());
+						for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
 							if(!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
 								sym_states_to_change[varInd] = true;
 							}
 						}
 						TaylorModelVec tmvNoSym;
-						remove_symbolic_remainders(tmvNoSym, tmvImage, realVarNames, sym_states_to_change, doAggregation);
-						tmvImage = tmvNoSym;
+						remove_symbolic_remainders(tmvNoSym, tmvAggregation, realVarNames, sym_states_to_change, doAggregation);
+						tmvAggregation = tmvNoSym;
 
 					        Flowpipe tempFP(X0, intZero);
-						for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+						for(int varInd = 0; varInd < tmvAggregation.tms.size(); varInd++){
 						    if(!states_to_change[varInd]){
-							    tempFP.tmv.tms[varInd] = tmvImage.tms[varInd];
-								tempFP.tmvPre.tms[varInd] = tmvImage.tms[varInd];
-								// tempFP.domain[varInd + 1] = tmvImage[varInd + 1];//unused
+							    tempFP.tmv.tms[varInd] = tmvAggregation.tms[varInd];
+								tempFP.tmvPre.tms[varInd] = tmvAggregation.tms[varInd];
+								// tempFP.domain[varInd + 1] = tmvAggregation[varInd + 1];//unused
 							}
 
 							if (!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))) {
@@ -8791,10 +8788,13 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 							}
 						}
 						
-						tmvImage = tempFP.tmvPre;
+						tmvAggregation = tempFP.tmvPre;
 					  }
 				}				
 				
+                //reset map
+                TaylorModelVec tmvImage;
+                transitions[initMode][i].resetMap.reset_nn(tmvImage, tmvAggregation, doAggregation, step_exp_table, realVarNames, globalMaxOrder, cutoff_threshold);
 
 				//End of code added by Rado
 
