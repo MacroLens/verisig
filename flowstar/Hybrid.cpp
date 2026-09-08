@@ -8635,6 +8635,8 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					std::vector<bool> states_to_remove(tmvImage.tms.size());
 					std::vector<bool> available_remainder_states(tmvImage.tms.size());
 					int largeRemainder = false;
+					size_t num_states_to_add = 0;
+					size_t num_sym_vars = 0;
 					// printf("Entered into symbolic_mode.");
 					for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
 						if(realVarNames[varInd+1][0] == 'x' &&
@@ -8643,13 +8645,17 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 								// If the state variable is not within condition
 								states_to_add[varInd] = true;
 								largeRemainder = true;
+								num_states_to_add++;
 						} else if (!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_")) &&
 							tmvImage.tms[varInd].isZero()) {
 							// If the variable is a symbolic remainder variable and it hasn't been used yet.
 							available_remainder_states[varInd] = true;
+							num_sym_vars++;
 						}
 					}
-					if(largeRemainder){
+					if (num_sym_vars < num_states_to_add) {
+						force_reset = true;
+					} else if(largeRemainder){
 						NNTaylorModelVec nntmvImage;
 						NNTaylorModelVec symTmv;
 						for(int kk = 0; kk < tmvImage.tms.size(); kk++){
@@ -8754,16 +8760,28 @@ int HybridSystem::reach_hybrid(std::list<std::list<TaylorModelVec> > & flowpipes
 					}
 
 					if(largeRemainder){
+						// Remove symbolic remainder prior to shrink-wrapping.
+						std::vector<bool> sym_states_to_change(tmvImage.tms.size());
+						for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
+							if(!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))){
+								sym_states_to_change[varInd] = true;
+							}
+						}
+						TaylorModelVec tmvNoSym;
+						remove_symbolic_remainders(tmvNoSym, tmvImage, realVarNames, sym_states_to_change, doAggregation);
+						tmvImage = tmvNoSym;
+
 					        Flowpipe tempFP(X0, intZero);
 						for(int varInd = 0; varInd < tmvImage.tms.size(); varInd++){
 						    if(!states_to_change[varInd]){
-							        tempFP.tmv.tms[varInd] = tmvImage.tms[varInd];
+							    tempFP.tmv.tms[varInd] = tmvImage.tms[varInd];
 								tempFP.tmvPre.tms[varInd] = tmvImage.tms[varInd];
 								// tempFP.domain[varInd + 1] = tmvImage[varInd + 1];//unused
 							}
+
 							if (!strncmp(realVarNames[varInd+1].c_str(), "sym_", strlen("sym_"))) {
 								printf("--==-- Did a reset due to symbolic remainders.\n");
-							    tempFP.tmv.tms[varInd] = TaylorModel(); // TODO: CHeck if this works after reset. This may be broken
+							    tempFP.tmv.tms[varInd] = TaylorModel();
 								// TODO: Could do sev or the gradient variables. Have to implement the digital hack, if we run out of variables
 								// we don't want to shrink-wrap in the same way, may want to unwrap symbolic variables to free up space.
 								// Temporarily adding a higher remainder will be ok since we are putting it back into a symbolic variable.
